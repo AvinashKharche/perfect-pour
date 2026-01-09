@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="perfect_pour">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>Perfect Pour</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <script>
+    // Web Audio API for game sounds
+    let audioContext = null;
+    let pourNoiseSource = null;
+    let pourGainNode = null;
+    
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioContext;
+    }
+    
+    function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+      const ctx = initAudio();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = type;
+      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + duration);
+    }
+    
+    // Create liquid pouring noise (zerrrrr sound)
+    function startPourSound() {
+      if (pourNoiseSource) return; // Already playing
+      
+      const ctx = initAudio();
+      
+      // Create noise buffer for liquid sound
+      const bufferSize = ctx.sampleRate * 0.5;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      
+      // Generate filtered noise that sounds like liquid
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * 0.5;
+      }
+      
+      // Create noise source
+      pourNoiseSource = ctx.createBufferSource();
+      pourNoiseSource.buffer = noiseBuffer;
+      pourNoiseSource.loop = true;
+      
+      // Bandpass filter to make it sound like liquid
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 800;
+      bandpass.Q.value = 0.5;
+      
+      // Low pass for smoothness
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.value = 2000;
+      
+      // Gain for volume control
+      pourGainNode = ctx.createGain();
+      pourGainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+      
+      // Add some wobble to make it more liquid-like
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.value = 8;
+      lfoGain.gain.value = 200;
+      lfo.connect(lfoGain);
+      lfoGain.connect(bandpass.frequency);
+      lfo.start();
+      
+      // Connect the chain
+      pourNoiseSource.connect(bandpass);
+      bandpass.connect(lowpass);
+      lowpass.connect(pourGainNode);
+      pourGainNode.connect(ctx.destination);
+      
+      pourNoiseSource.start();
+    }
+    
+    function stopPourSound() {
+      if (pourNoiseSource) {
+        try {
+          pourGainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          setTimeout(() => {
+            if (pourNoiseSource) {
+              pourNoiseSource.stop();
+              pourNoiseSource = null;
+              pourGainNode = null;
+            }
+          }, 100);
+        } catch(e) {
+          pourNoiseSource = null;
+          pourGainNode = null;
+        }
+      }
+    }
+    
+    // Game sound effects
+    window.playGameSound = function(soundType) {
+      switch(soundType) {
+        case 'tap':
+          playTone(800, 0.05, 'sine', 0.2);
+          break;
+        case 'pourStart':
+          startPourSound();
+          break;
+        case 'pourStop':
+          stopPourSound();
+          break;
+        case 'success':
+          stopPourSound();
+          playTone(523, 0.15, 'sine', 0.3);
+          setTimeout(() => playTone(659, 0.15, 'sine', 0.3), 100);
+          setTimeout(() => playTone(784, 0.2, 'sine', 0.3), 200);
+          break;
+        case 'perfect':
+          stopPourSound();
+          playTone(523, 0.1, 'sine', 0.3);
+          setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 80);
+          setTimeout(() => playTone(784, 0.1, 'sine', 0.3), 160);
+          setTimeout(() => playTone(1047, 0.3, 'sine', 0.4), 240);
+          break;
+        case 'fail':
+          stopPourSound();
+          playTone(300, 0.15, 'sawtooth', 0.25);
+          setTimeout(() => playTone(200, 0.3, 'sawtooth', 0.2), 150);
+          break;
+        case 'achievement':
+          playTone(880, 0.1, 'sine', 0.3);
+          setTimeout(() => playTone(1100, 0.1, 'sine', 0.3), 100);
+          setTimeout(() => playTone(1320, 0.2, 'sine', 0.35), 200);
+          break;
+        case 'streak':
+          playTone(600, 0.08, 'triangle', 0.25);
+          setTimeout(() => playTone(800, 0.08, 'triangle', 0.25), 80);
+          setTimeout(() => playTone(1000, 0.12, 'triangle', 0.3), 160);
+          break;
+      }
+    };
+  </script>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

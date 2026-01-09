@@ -1,0 +1,42 @@
+name: perfect_pour
+description: A precision liquid pouring game - Fill to the exact target level!
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State management
+  provider: ^6.1.1
+  
+  # Local storage for progress
+  shared_preferences: ^2.2.2
+  
+  # Animations
+  flutter_animate: ^4.3.0
+  
+  # Google Mobile Ads (AdMob)
+  google_mobile_ads: ^4.0.0
+  
+  # Audio
+  audioplayers: ^5.2.1
+  
+  # Icons
+  cupertino_icons: ^1.0.6
+  google_fonts: ^7.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/audio/
