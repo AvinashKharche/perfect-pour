@@ -118,6 +118,12 @@ class AppTheme {
       color: textPrimary,
       letterSpacing: 0.5,
     ),
+    labelSmall: GoogleFonts.poppins(
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      color: textPrimary,
+      letterSpacing: 1.0,
+    ),
   );
 
   static ThemeData get themeData {

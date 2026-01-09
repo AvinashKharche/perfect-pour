@@ -12,6 +12,7 @@ class GameState extends ChangeNotifier {
   static const String _bestStreakKey = 'best_streak';
   static const String _totalScoreKey = 'total_score';
   static const String _achievementsKey = 'achievements';
+  static const String _hasRatedAppKey = 'has_rated_app';
   
   late SharedPreferences _prefs;
   bool _isLoaded = false;
@@ -21,6 +22,7 @@ class GameState extends ChangeNotifier {
   int _currentStreak = 0;
   int _bestStreak = 0;
   int _totalScore = 0;
+  bool _hasRatedApp = false;
   final Map<int, int> _levelStars = {};
   final Map<int, double> _bestAccuracy = {};
   Set<String> _unlockedAchievements = {};
@@ -37,6 +39,7 @@ class GameState extends ChangeNotifier {
   int get currentStreak => _currentStreak;
   int get bestStreak => _bestStreak;
   int get totalScore => _totalScore;
+  bool get hasRatedApp => _hasRatedApp;
   List<Level> get allLevels => _allLevels;
   Achievement? get pendingAchievement => _pendingAchievement;
   
@@ -69,6 +72,7 @@ class GameState extends ChangeNotifier {
     _currentStreak = _prefs.getInt(_currentStreakKey) ?? 0;
     _bestStreak = _prefs.getInt(_bestStreakKey) ?? 0;
     _totalScore = _prefs.getInt(_totalScoreKey) ?? 0;
+    _hasRatedApp = _prefs.getBool(_hasRatedAppKey) ?? false;
     
     // Load achievements
     final achievementsList = _prefs.getStringList(_achievementsKey) ?? [];
@@ -206,6 +210,13 @@ class GameState extends ChangeNotifier {
       _unlockAchievement(AchievementType.level100);
     }
     
+    notifyListeners();
+  }
+  
+  /// Mark app as rated
+  Future<void> markAppRated() async {
+    _hasRatedApp = true;
+    await _prefs.setBool(_hasRatedAppKey, true);
     notifyListeners();
   }
   

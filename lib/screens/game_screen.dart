@@ -12,6 +12,7 @@ import 'package:perfect_pour/widgets/liquid_container.dart';
 import 'package:perfect_pour/widgets/result_overlay.dart';
 import 'package:perfect_pour/widgets/achievement_popup.dart';
 import 'package:perfect_pour/services/audio_service.dart';
+import 'package:perfect_pour/services/ad_service.dart';
 
 enum GamePhase { ready, pouring, stopped, result }
 
@@ -156,6 +157,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     final isPerfect = widget.level.isPerfect(_currentFillPercentage);
     final difference = _currentFillPercentage - widget.level.targetPercentage;
     
+    // Check for "Rate Us" trigger (3 stars and not rated yet)
+    if (stars == 3 && !gameState.hasRatedApp) {
+      // Small delay to not interfere with result animation
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) _showRateUsDialog();
+      });
+    }
+    
+    // Track game completion for ads
+    AdService.instance.onGameCompleted();
+    
+    // Show interstitial if needed (after a slight delay so it doesn't pop instantly)
+    if (AdService.instance.shouldShowInterstitial()) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        AdService.instance.showInterstitial();
+      });
+    }
+    
     gameState.completeLevel(
       levelNumber: widget.level.number,
       stars: stars,
@@ -163,6 +182,36 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       isPerfect: isPerfect,
       difference: difference,
       remainingSeconds: _remainingSeconds,
+    );
+  }
+  
+  void _showRateUsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.bgSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Enjoying Perfect Pour?', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'If you like the game, please take a moment to rate it. It really helps us!',
+          style: TextStyle(color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later', style: TextStyle(color: AppTheme.textTertiary)),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<GameState>().markAppRated();
+              Navigator.pop(context);
+              // TODO: Launch store URL
+              // launchUrl(Uri.parse('https://play.google.com/store/apps/details?id=com.perfectpour.game'));
+            },
+            child: const Text('Rate Now', style: TextStyle(color: AppTheme.accentPrimary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 
