@@ -23,6 +23,7 @@ class GameState extends ChangeNotifier {
   int _bestStreak = 0;
   int _totalScore = 0;
   bool _hasRatedApp = false;
+  bool _ratePromptShownThisSession = false;
   final Map<int, int> _levelStars = {};
   final Map<int, double> _bestAccuracy = {};
   Set<String> _unlockedAchievements = {};
@@ -40,6 +41,7 @@ class GameState extends ChangeNotifier {
   int get bestStreak => _bestStreak;
   int get totalScore => _totalScore;
   bool get hasRatedApp => _hasRatedApp;
+  bool get ratePromptShownThisSession => _ratePromptShownThisSession;
   List<Level> get allLevels => _allLevels;
   Achievement? get pendingAchievement => _pendingAchievement;
   
@@ -213,6 +215,12 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
   
+  /// Mark rate prompt as shown for this session
+  void markRatePromptShown() {
+    _ratePromptShownThisSession = true;
+    // Don't notify listeners as this doesn't affect UI rebuilding
+  }
+
   /// Mark app as rated
   Future<void> markAppRated() async {
     _hasRatedApp = true;

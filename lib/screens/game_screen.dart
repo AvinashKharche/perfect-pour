@@ -157,11 +157,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     final isPerfect = widget.level.isPerfect(_currentFillPercentage);
     final difference = _currentFillPercentage - widget.level.targetPercentage;
     
-    // Check for "Rate Us" trigger (3 stars and not rated yet)
-    if (stars == 3 && !gameState.hasRatedApp) {
+    // Check for "Rate Us" trigger (3 stars, not rated yet, and prompt not shown this session)
+    if (stars == 3 && !gameState.hasRatedApp && !gameState.ratePromptShownThisSession) {
       // Small delay to not interfere with result animation
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) _showRateUsDialog();
+        if (mounted) {
+          gameState.markRatePromptShown();
+          _showRateUsDialog();
+        }
       });
     }
     
